@@ -154,19 +154,24 @@ class MainActivity : ComponentActivity() {
                         route = Screen.AddFuel.route + "/{vehicleId}",
                         arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        val vId = backStackEntry.arguments?.getInt("vehicleId") ?: 0
+                        // 1. You defined the variable as 'vId' here...
+                        val vIdFromNav = backStackEntry.arguments?.getInt("vehicleId") ?: 0
+
                         AddFuelScreen(
-                            vehicleId = vId,
+                            // 2. So you must use 'vIdFromNav' here!
+                            vehicleId = vIdFromNav,
                             viewModel = viewModel,
-                            onSaveComplete = { navController.popBackStack() },
                             onBackClick = { navController.popBackStack() },
-                            onSaveClick = { vehicleId, entryId, odo, amt, price, full, note, date ->
-                                if (entryId == -1) {
-                                    viewModel.addFuelEntry(odo, amt, price, full, note, date)
+                            onSaveComplete = { navController.popBackStack() },
+                            onSaveClick = { vehicleId, id, odo, amt, price, full, notes, date,
+                                            sName, loc, phone, types, hour, hosp, wash, wait, road ->
+                                if (id == -1) {
+                                    viewModel.addFuelEntry(odo, amt, price, full, notes, date,
+                                        sName, loc, phone, types, hour, hosp, wash, wait, road)
                                 } else {
-                                    viewModel.updateFuelEntry(entryId, vehicleId, odo, amt, price, full, note, date)
+                                    viewModel.updateFuelEntry(id, vehicleId, odo, amt, price, full, notes, date,
+                                        sName, loc, phone, types, hour, hosp, wash, wait, road)
                                 }
-                                navController.popBackStack()
                             }
                         )
                     }
