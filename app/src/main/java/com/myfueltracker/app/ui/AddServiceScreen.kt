@@ -9,107 +9,85 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
-import com.myfueltracker.app.data.local.Vehicle
+import com.myfueltracker.app.data.local.ServiceLog
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddVehicleScreen(
+fun AddServiceScreen(
+    vehicleId: Int,
     viewModel: FuelViewModel,
-    vehicleId: Int = -1,
-    onSaveComplete: () -> Unit, // Standardized for both Add and Edit modes
-    onBackClick: () -> Unit      // Specifically for the TopAppBar navigation
+    onSaveComplete: () -> Unit,
+    onBackClick: () -> Unit
 ) {
-    // Identity Info
-    var name by remember { mutableStateOf("") }
-    var registrationNumber by remember { mutableStateOf("") }
-    var chassisNumber by remember { mutableStateOf("") }
-    var engineNumber by remember { mutableStateOf("") }
-    var brand by remember { mutableStateOf("") }
-    var model by remember { mutableStateOf("") }
-    var vehicleType by remember { mutableStateOf("Car") }
+    val editingService by viewModel.selectedServiceLog.collectAsState()
 
-    // Technical Fields
-    var modelYear by remember { mutableStateOf("") }
-    var color by remember { mutableStateOf("") }
-    var fuelCapacity by remember { mutableStateOf("") }
-    var seatingCapacity by remember { mutableStateOf("") }
-    var wheelSize by remember { mutableStateOf("") }
-    var weight by remember { mutableStateOf("") }
-    var height by remember { mutableStateOf("") }
-    var length by remember { mutableStateOf("") }
-    var width by remember { mutableStateOf("") }
-    var loadCapacity by remember { mutableStateOf("") }
+    // --- UI STATES ---
+    var serviceType by remember { mutableStateOf("") }
+    var odoInput by remember { mutableStateOf("") }
+    var costInput by remember { mutableStateOf("") }
+    var notesInput by remember { mutableStateOf("") }
 
-    // Engine Specs
-    var engineCC by remember { mutableStateOf("") }
-    var cylinders by remember { mutableStateOf("") }
-    var maxPower by remember { mutableStateOf("") }
-    var maxTorque by remember { mutableStateOf("") }
+    var centerName by remember { mutableStateOf("") }
+    var location by remember { mutableStateOf("") }
+    var contactInfo by remember { mutableStateOf("") }
+    var serviceQuality by remember { mutableFloatStateOf(4f) }
 
     // Date Picker State
-    var purchaseDate by remember { mutableStateOf(System.currentTimeMillis()) }
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = System.currentTimeMillis())
     var showDatePicker by remember { mutableStateOf(false) }
-    val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
-    // Observe existing vehicle for Edit mode
-    val existingVehicle by if (vehicleId != -1) {
-        viewModel.getVehicleById(vehicleId).collectAsState(initial = null)
-    } else {
-        remember { mutableStateOf(null) }
-    }
+    // We use a derived state or a local variable to handle the display date
+    val dateTimestamp = datePickerState.selectedDateMillis ?: System.currentTimeMillis()
+    val sdf = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
 
-    LaunchedEffect(existingVehicle) {
-        existingVehicle?.let { v ->
-            name = v.name
-            registrationNumber = v.registrationNumber
-            chassisNumber = v.chassisNumber
-            engineNumber = v.engineNumber
-            brand = v.brand
-            model = v.model
-            vehicleType = v.vehicleType
-            modelYear = v.modelYear
-            purchaseDate = v.purchaseDate
-            color = v.color
-            fuelCapacity = if(v.fuelCapacity > 0.0) v.fuelCapacity.toString() else ""
-            seatingCapacity = if(v.seatingCapacity > 0) v.seatingCapacity.toString() else ""
-            wheelSize = v.wheelSize
-            weight = if(v.weight > 0.0) v.weight.toString() else ""
-            height = if(v.height > 0.0) v.height.toString() else ""
-            length = if(v.length > 0.0) v.length.toString() else ""
-            width = if(v.width > 0.0) v.width.toString() else ""
-            engineCC = if(v.engineCC > 0) v.engineCC.toString() else ""
-            cylinders = if(v.cylinders > 0) v.cylinders.toString() else ""
-            maxPower = v.maxPower
-            maxTorque = v.maxTorque
-            loadCapacity = if(v.loadCapacity > 0.0) v.loadCapacity.toString() else ""
+    // --- POPULATE DATA ON EDIT ---
+    LaunchedEffect(editingService) {
+        editingService?.let { service ->
+            serviceType = service.serviceType ?: ""
+            odoInput = service.odoReading.toString()
+            costInput = service.cost.toString()
+            notesInput = service.notes ?: ""
+            datePickerState.selectedDateMillis = service.date
+
+            // Populate the provider-specific fields
+            centerName = service.serviceCenter ?: ""
+            location = service.location ?: ""
+            contactInfo = service.contact ?: ""
+            serviceQuality = service.rating.toFloat()
         }
     }
 
+    DisposableEffect(Unit) {
+        onDispose { viewModel.setSelectedServiceLog(null) }
+    }
+
     if (showDatePicker) {
-        val datePickerState = rememberDatePickerState(initialSelectedDateMillis = purchaseDate)
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
-                TextButton(onClick = {
-                    purchaseDate = datePickerState.selectedDateMillis ?: purchaseDate
-                    showDatePicker = false
-                }) { Text("OK") }
+                TextButton(onClick = { showDatePicker = false }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("Cancel") }
             }
-        ) { DatePicker(state = datePickerState) }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(if (vehicleId == -1) "Add Vehicle" else "Edit Vehicle") },
+                title = { Text(if (editingService == null) "Add Service Record" else "Edit Service Record") },
                 navigationIcon = {
-                    IconButton(onClick = onBackClick) { // FIXED: Now using onBackClick
+                    IconButton(onClick = onBackClick) {
                         Icon(Icons.Default.ArrowBack, contentDescription = "Back")
                     }
                 }
@@ -120,150 +98,158 @@ fun AddVehicleScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .padding(horizontal = 16.dp)
+                .padding(16.dp)
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(8.dp))
+            // 1. Date Field
+            OutlinedTextField(
+                value = sdf.format(Date(dateTimestamp)),
+                onValueChange = {},
+                readOnly = true,
+                label = { Text("Service Date") },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { showDatePicker = true },
+                trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
+                enabled = false,
+                colors = OutlinedTextFieldDefaults.colors(
+                    disabledTextColor = MaterialTheme.colorScheme.onSurface,
+                    disabledBorderColor = MaterialTheme.colorScheme.outline,
+                    disabledTrailingIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            )
 
-            Text("Vehicle Type", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-            Row(
+            // 2. Service Type
+            OutlinedTextField(
+                value = serviceType,
+                onValueChange = { serviceType = it },
+                label = { Text("Service Type") },
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                val types = listOf(
-                    "Car" to Icons.Default.DirectionsCar,
-                    "Motorcycle" to Icons.Default.TwoWheeler,
-                    "Truck" to Icons.Default.LocalShipping,
-                    "Boat" to Icons.Default.DirectionsBoat
+                leadingIcon = { Icon(Icons.Default.Handyman, null) },
+                placeholder = { Text("e.g. Engine Oil Change") }
+            )
+
+            // --- SERVICE PROVIDER SECTION ---
+            Text(
+                text = "Service Provider",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            OutlinedTextField(
+                value = centerName,
+                onValueChange = { centerName = it },
+                label = { Text("Service Center Name") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Store, null) }
+            )
+
+            OutlinedTextField(
+                value = location,
+                onValueChange = { location = it },
+                label = { Text("Location / Address") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.LocationOn, null) }
+            )
+
+            OutlinedTextField(
+                value = contactInfo,
+                onValueChange = { contactInfo = it },
+                label = { Text("Contact Number") },
+                modifier = Modifier.fillMaxWidth(),
+                leadingIcon = { Icon(Icons.Default.Phone, null) },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+            )
+
+            Column {
+                Text(
+                    text = "Service Quality: ${serviceQuality.toInt()}/5",
+                    style = MaterialTheme.typography.bodyMedium
                 )
-
-                types.forEach { (type, icon) ->
-                    FilterChip(
-                        selected = vehicleType == type,
-                        onClick = { vehicleType = type },
-                        label = { Text(type) },
-                        leadingIcon = { Icon(icon, contentDescription = null, modifier = Modifier.size(18.dp)) }
-                    )
-                }
+                Slider(
+                    value = serviceQuality,
+                    onValueChange = { serviceQuality = it },
+                    valueRange = 1f..5f,
+                    steps = 3,
+                    modifier = Modifier.padding(horizontal = 8.dp)
+                )
             }
 
-            SectionHeader("Identity")
-            OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Vehicle Nickname") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = registrationNumber, onValueChange = { registrationNumber = it }, label = { Text("Registration Number") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = chassisNumber, onValueChange = { chassisNumber = it }, label = { Text("Chassis Number") }, modifier = Modifier.fillMaxWidth())
-            OutlinedTextField(value = engineNumber, onValueChange = { engineNumber = it }, label = { Text("Engine Number") }, modifier = Modifier.fillMaxWidth())
+            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = brand, onValueChange = { brand = it }, label = { Text("Brand") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = model, onValueChange = { model = it }, label = { Text("Model") }, modifier = Modifier.weight(1f))
-            }
-
-            SectionHeader("Purchase Details")
-            Box(modifier = Modifier.fillMaxWidth().clickable { showDatePicker = true }) {
+            // --- COSTS AND ODOMETER ---
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
-                    value = dateFormatter.format(Date(purchaseDate)),
-                    onValueChange = {},
-                    label = { Text("Purchase Date") },
-                    readOnly = true,
-                    enabled = false,
-                    modifier = Modifier.fillMaxWidth(),
-                    trailingIcon = { Icon(Icons.Default.CalendarMonth, null) },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        disabledTextColor = MaterialTheme.colorScheme.onSurface,
-                        disabledBorderColor = MaterialTheme.colorScheme.outline,
-                        disabledLabelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                        disabledTrailingIconColor = MaterialTheme.colorScheme.primary
-                    )
+                    value = odoInput,
+                    onValueChange = { if (it.isEmpty() || it.toDoubleOrNull() != null) odoInput = it },
+                    label = { Text("Odometer") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    suffix = { Text("km") }
+                )
+                OutlinedTextField(
+                    value = costInput,
+                    onValueChange = { if (it.isEmpty() || it.toDoubleOrNull() != null) costInput = it },
+                    label = { Text("Total Cost") },
+                    modifier = Modifier.weight(1f),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal)
                 )
             }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = modelYear, onValueChange = { modelYear = it }, label = { Text("Model Year") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = color, onValueChange = { color = it }, label = { Text("Color") }, modifier = Modifier.weight(1f))
-            }
-
-            SectionHeader("Engine & Power")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = engineCC, onValueChange = { engineCC = it }, label = { Text("Engine (CC)") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = cylinders, onValueChange = { cylinders = it }, label = { Text("Cylinders") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = maxPower, onValueChange = { maxPower = it }, label = { Text("Max Power") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = maxTorque, onValueChange = { maxTorque = it }, label = { Text("Max Torque") }, modifier = Modifier.weight(1f))
-            }
-
-            SectionHeader("Capacities")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = fuelCapacity, onValueChange = { fuelCapacity = it }, label = { Text("Fuel (Litre)") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = seatingCapacity, onValueChange = { seatingCapacity = it }, label = { Text("Seating") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-
-            SectionHeader("Dimensions & Weight")
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = wheelSize, onValueChange = { wheelSize = it }, label = { Text("Wheel Size") }, modifier = Modifier.weight(1f))
-                OutlinedTextField(value = weight, onValueChange = { weight = it }, label = { Text("Weight (kg)") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = length, onValueChange = { length = it }, label = { Text("Length") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = width, onValueChange = { width = it }, label = { Text("Width") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(value = height, onValueChange = { height = it }, label = { Text("Height") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-                OutlinedTextField(value = loadCapacity, onValueChange = { loadCapacity = it }, label = { Text("Load Cap.") }, modifier = Modifier.weight(1f), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
-            }
+            OutlinedTextField(
+                value = notesInput,
+                onValueChange = { notesInput = it },
+                label = { Text("Notes / Description") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 3
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // --- SAVE BUTTON ---
             Button(
                 onClick = {
-                    val vehicle = Vehicle(
-                        id = if (vehicleId == -1) 0 else vehicleId,
-                        name = name,
-                        registrationNumber = registrationNumber,
-                        chassisNumber = chassisNumber,
-                        engineNumber = engineNumber,
-                        brand = brand,
-                        model = model,
-                        vehicleType = vehicleType,
-                        modelYear = modelYear,
-                        purchaseDate = purchaseDate,
-                        color = color,
-                        fuelCapacity = fuelCapacity.toDoubleOrNull() ?: 0.0,
-                        seatingCapacity = seatingCapacity.toIntOrNull() ?: 0,
-                        wheelSize = wheelSize,
-                        weight = weight.toDoubleOrNull() ?: 0.0,
-                        height = height.toDoubleOrNull() ?: 0.0,
-                        length = length.toDoubleOrNull() ?: 0.0,
-                        width = width.toDoubleOrNull() ?: 0.0,
-                        engineCC = engineCC.toIntOrNull() ?: 0,
-                        cylinders = cylinders.toIntOrNull() ?: 0,
-                        maxPower = maxPower,
-                        maxTorque = maxTorque,
-                        loadCapacity = loadCapacity.toDoubleOrNull() ?: 0.0
-                    )
+                    val odo = odoInput.toDoubleOrNull() ?: 0.0
+                    val cost = costInput.toDoubleOrNull() ?: 0.0
 
-                    if (vehicleId == -1) viewModel.addVehicle(vehicle)
-                    else viewModel.updateVehicle(vehicle)
-
-                    onSaveComplete() // Navigation trigger
+                    if (editingService == null) {
+                        viewModel.addServiceLog(
+                            type = serviceType,
+                            odo = odo,
+                            cost = cost,
+                            n = notesInput,
+                            d = dateTimestamp,
+                            center = centerName,
+                            loc = location,
+                            phone = contactInfo,
+                            star = serviceQuality.toInt(),
+                            vId = vehicleId // Using the vehicleId passed into the Composable
+                        )
+                    } else {
+                        viewModel.updateServiceEntry(
+                            id = editingService!!.id,
+                            vehicleId = editingService!!.vehicleId,
+                            type = serviceType,
+                            odo = odo,
+                            cost = cost,
+                            n = notesInput,
+                            d = dateTimestamp,
+                            center = centerName,
+                            loc = location,
+                            phone = contactInfo,
+                            star = serviceQuality.toInt()
+                        )
+                    }
+                    onSaveComplete()
                 },
-                modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                enabled = name.isNotBlank() && registrationNumber.isNotBlank()
+                modifier = Modifier.fillMaxWidth().height(56.dp),
+                enabled = serviceType.isNotBlank() && odoInput.isNotBlank() && costInput.isNotBlank()
             ) {
-                Text(if (vehicleId == -1) "Save Vehicle" else "Update Vehicle")
+                Text(if (editingService == null) "Save Record" else "Update Record")
             }
         }
     }
 }
-
-//@Composable
-//fun SectionHeader(title: String) {
-//    Text(
-//        text = title,
-//        style = MaterialTheme.typography.labelLarge,
-//        color = MaterialTheme.colorScheme.primary,
-//        fontWeight = FontWeight.Bold,
-//        modifier = Modifier.padding(top = 8.dp)
-//    )
-//}
