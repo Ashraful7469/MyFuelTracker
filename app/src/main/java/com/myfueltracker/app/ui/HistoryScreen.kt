@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
@@ -30,6 +31,9 @@ fun HistoryScreen(viewModel: FuelViewModel, navController: NavController) {
     val currency by viewModel.currency.collectAsState()
     val distanceUnit by viewModel.distanceUnit.collectAsState()
     val fuelUnit by viewModel.fuelUnit.collectAsState()
+
+    // Get the selected vehicle ID to enable the Add buttons
+    val selectedVehicleId by viewModel.selectedVehicleId.collectAsState()
 
     var itemToDelete by remember { mutableStateOf<HistoryItem?>(null) }
 
@@ -63,6 +67,29 @@ fun HistoryScreen(viewModel: FuelViewModel, navController: NavController) {
                     }
                 }
             )
+        },
+        // --- ADDED FLOATING ACTION BUTTONS ---
+        floatingActionButton = {
+            selectedVehicleId?.let { vehicleId ->
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    FloatingActionButton(
+                        onClick = { navController.navigate("${Screen.AddService.route}/$vehicleId") },
+                        containerColor = Color(0xFF2E7D32),
+                        contentColor = Color.White,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.Handyman, "Add Service") }
+
+                    FloatingActionButton(
+                        onClick = { navController.navigate("${Screen.AddFuel.route}/$vehicleId") },
+                        containerColor = Color.Red,
+                        contentColor = Color.White,
+                        shape = CircleShape
+                    ) { Icon(Icons.Default.LocalGasStation, "Add Fuel") }
+                }
+            }
         }
     ) { padding ->
         if (historyItems.isEmpty()) {
@@ -77,9 +104,9 @@ fun HistoryScreen(viewModel: FuelViewModel, navController: NavController) {
             LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 verticalArrangement = Arrangement.spacedBy(12.dp),
-                contentPadding = PaddingValues(16.dp)
+                // Added significant bottom padding (100dp) so FABs don't cover the last card
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 100.dp)
             ) {
-                // Use itemsIndexed to access the next item for mileage calculation
                 itemsIndexed(
                     items = historyItems,
                     key = { _, item ->
@@ -117,10 +144,8 @@ fun HistoryScreen(viewModel: FuelViewModel, navController: NavController) {
                     ) {
                         when (item) {
                             is HistoryItem.Fuel -> {
-                                // --- MILEAGE CALCULATION ---
-                                // Find the previous fueling for the same vehicle
                                 val previousFuelEntry = historyItems
-                                    .drop(index + 1) // Look at items older than this one
+                                    .drop(index + 1)
                                     .filterIsInstance<HistoryItem.Fuel>()
                                     .firstOrNull { it.entry.vehicleId == item.entry.vehicleId }
 
