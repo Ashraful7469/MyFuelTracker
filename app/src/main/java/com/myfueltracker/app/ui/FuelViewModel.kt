@@ -177,14 +177,89 @@ class FuelViewModel(application: Application) : AndroidViewModel(application) {
         _selectedServiceLog.value = log
     }
 
-    fun addFuelEntry(odo: Double, amt: Double, p: Double, full: Boolean, n: String, d: Long) = viewModelScope.launch {
-        repository.insertFuel(FuelEntry(vehicleId = _selectedVehicleId.value ?: 1, odometer = odo, fuelAmount = amt, pricePerUnit = p, isFullTank = full, notes = n, dateTimestamp = d))
+    fun addFuelEntry(
+        odo: Double,
+        amt: Double,
+        p: Double,
+        full: Boolean,
+        n: String,
+        d: Long,
+        // New optional fields
+        stationName: String? = null,
+        location: String? = null,
+        contact: String? = null,
+        fuelTypes: String? = null,
+        serviceHour: String? = null,
+        hospitality: String? = null,
+        washroom: String? = null,
+        waiting: String? = null,
+        roadside: String? = null
+    ) = viewModelScope.launch {
+        repository.insertFuel(
+            FuelEntry(
+                vehicleId = _selectedVehicleId.value ?: 1,
+                odometer = odo,
+                fuelAmount = amt,
+                pricePerUnit = p,
+                isFullTank = full,
+                notes = n,
+                dateTimestamp = d,
+                // Passing the new fields to the data model
+                stationName = stationName,
+                location = location,
+                contactNumber = contact,
+                fuelTypes = fuelTypes,
+                serviceHour = serviceHour,
+                hospitality = hospitality,
+                hasWashroom = washroom,
+                hasWaiting = waiting,
+                goodForRoadsideStop = roadside
+            )
+        )
     }
 
-    fun updateFuelEntry(id: Int, vId: Int, odo: Double, amt: Double, p: Double, full: Boolean, n: String, d: Long) = viewModelScope.launch {
-        repository.updateFuel(FuelEntry(id, vId, odo, amt, p, full, n, d))
+    fun updateFuelEntry(
+        id: Int,
+        vId: Int,
+        odo: Double,
+        amt: Double,
+        p: Double,
+        full: Boolean,
+        n: String,
+        d: Long,
+        // New optional fields
+        stationName: String? = null,
+        location: String? = null,
+        contact: String? = null,
+        fuelTypes: String? = null,
+        serviceHour: String? = null,
+        hospitality: String? = null,
+        washroom: String? = null,
+        waiting: String? = null,
+        roadside: String? = null
+    ) = viewModelScope.launch {
+        repository.updateFuel(
+            FuelEntry(
+                id = id,
+                vehicleId = vId,
+                odometer = odo,
+                fuelAmount = amt,
+                pricePerUnit = p,
+                isFullTank = full,
+                notes = n,
+                dateTimestamp = d,
+                stationName = stationName,
+                location = location,
+                contactNumber = contact,
+                fuelTypes = fuelTypes,
+                serviceHour = serviceHour,
+                hospitality = hospitality,
+                hasWashroom = washroom,
+                hasWaiting = waiting,
+                goodForRoadsideStop = roadside
+            )
+        )
     }
-
     fun addServiceLog(
         type: String,
         odo: Double,
