@@ -5,16 +5,19 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "service_logs")
 data class ServiceLog(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,
+    @PrimaryKey(autoGenerate = true)
+    val id: Int = 0,
+
     val vehicleId: Int,
     val serviceType: String,
     val odoReading: Double,
     val cost: Double,
+    val notes: String?,
     val date: Long,
-    val notes: String,
-    // Ensure these exist:
-    val centerName: String? = null,
-    val location: String? = null,
-    val phone: String? = null,
-    val quality: Int = 4
+
+    // Provider specific fields
+    val serviceCenter: String? = "",
+    val location: String? = "",
+    val contact: String? = "",
+    val rating: Int = 4
 )
