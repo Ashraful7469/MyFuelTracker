@@ -1,0 +1,23 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:padding="16dp"
+    android:orientation="vertical"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <EditText
+        android:id="@+id/odo"
+        android:hint="Odometer"/>
+
+    <EditText
+        android:id="@+id/fuel"
+        android:hint="Fuel Amount"/>
+
+    <EditText
+        android:id="@+id/price"
+        android:hint="Price per Unit"/>
+
+    <Button
+        android:id="@+id/saveBtn"
+        android:text="Save"/>
+</LinearLayout>

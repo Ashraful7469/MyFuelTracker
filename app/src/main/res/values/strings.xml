@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">My Fuel Tracker</string>
+    <string name="title_activity_add_fuel">AddFuelActivity</string>
+</resources>
