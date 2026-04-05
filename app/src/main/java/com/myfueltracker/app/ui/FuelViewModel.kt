@@ -185,12 +185,62 @@ class FuelViewModel(application: Application) : AndroidViewModel(application) {
         repository.updateFuel(FuelEntry(id, vId, odo, amt, p, full, n, d))
     }
 
-    fun addServiceLog(type: String, odo: Double, cost: Double, n: String, d: Long) = viewModelScope.launch {
-        repository.insertService(ServiceLog(vehicleId = _selectedVehicleId.value ?: 1, serviceType = type, odoReading = odo, cost = cost, notes = n, date = d))
+    fun addServiceLog(
+        type: String,
+        odo: Double,
+        cost: Double,
+        n: String,
+        d: Long,
+        centerName: String = "",
+        location: String = "",
+        phone: String = "",
+        quality: Int = 4
+    ) = viewModelScope.launch {
+        repository.insertService(
+            ServiceLog(
+                vehicleId = _selectedVehicleId.value ?: 1,
+                serviceType = type,
+                odoReading = odo,
+                cost = cost,
+                notes = n,
+                date = d,
+                // ADD THESE NEW FIELDS BELOW:
+                centerName = centerName,
+                location = location,
+                phone = phone,
+                quality = quality
+            )
+        )
     }
 
-    fun updateServiceEntry(id: Int, vehicleId: Int, type: String, odo: Double, cost: Double, date: Long, notes: String) = viewModelScope.launch {
-        repository.updateService(ServiceLog(id, vehicleId, type, odo, cost, date, notes))
+    fun updateServiceEntry(
+        id: Int,
+        vehicleId: Int,
+        type: String,
+        odo: Double,
+        cost: Double,
+        n: String,    // Changed from notes to n
+        d: Long,      // Changed from date to d
+        centerName: String = "",
+        location: String = "",
+        phone: String = "",
+        quality: Int = 4
+    ) = viewModelScope.launch {
+        repository.updateService(
+            ServiceLog(
+                id = id,
+                vehicleId = vehicleId,
+                serviceType = type,
+                odoReading = odo,
+                cost = cost,
+                date = d,
+                notes = n,
+                centerName = centerName,
+                location = location,
+                phone = phone,
+                quality = quality
+            )
+        )
     }
 
     fun deleteHistoryItem(item: HistoryItem) = viewModelScope.launch {
