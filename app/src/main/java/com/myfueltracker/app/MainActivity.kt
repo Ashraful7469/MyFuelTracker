@@ -13,6 +13,23 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.myfueltracker.app.ui.*
+// Compose State & Lifecycle
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.LaunchedEffect
+
+// Compose UI Components
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+
+// Your New Update System Classes
+import com.myfueltracker.app.utils.UpdateManager
+import com.myfueltracker.app.data.remote.GitHubRelease
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -24,6 +41,39 @@ class MainActivity : ComponentActivity() {
             val isFirstRun by viewModel.isFirstRun.collectAsState(initial = true)
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
+
+            val context = androidx.compose.ui.platform.LocalContext.current
+            val updateManager = remember { UpdateManager(context) }
+            var updateInfo by remember { mutableStateOf<GitHubRelease?>(null) }
+
+// Check for updates on launch
+            LaunchedEffect(Unit) {
+                // Replace "v1.0.0" with your actual current version string
+                val latest = updateManager.checkForUpdates("v1.0.0")
+                if (latest != null) {
+                    updateInfo = latest
+                }
+            }
+
+// Show the dialog if an update is found
+            if (updateInfo != null) {
+                AlertDialog(
+                    onDismissRequest = { updateInfo = null },
+                    title = { Text("Update Available") },
+                    text = { Text("A new version (${updateInfo?.tag_name}) is ready. Would you like to download it?") },
+                    confirmButton = {
+                        Button(onClick = {
+                            updateInfo?.assets?.firstOrNull()?.let {
+                                updateManager.downloadAndInstall(it.browser_download_url)
+                            }
+                            updateInfo = null
+                        }) { Text("Download") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { updateInfo = null }) { Text("Later") }
+                    }
+                )
+            }
 
             // Routes where the bottom navigation bar should be hidden
             val hideBottomBarRoutes = listOf(
