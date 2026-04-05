@@ -261,61 +261,47 @@ class FuelViewModel(application: Application) : AndroidViewModel(application) {
         )
     }
     fun addServiceLog(
-        type: String,
-        odo: Double,
-        cost: Double,
-        n: String,
-        d: Long,
-        centerName: String = "",
-        location: String = "",
-        phone: String = "",
-        quality: Int = 4
-    ) = viewModelScope.launch {
-        repository.insertService(
-            ServiceLog(
-                vehicleId = _selectedVehicleId.value ?: 1,
+        type: String, odo: Double, cost: Double, n: String, d: Long,
+        center: String, loc: String, phone: String, star: Int,
+        vId: Int // Pass vehicleId directly from the UI to avoid _selectedVehicle issues
+    ) {
+        viewModelScope.launch {
+            val newLog = ServiceLog(
+                vehicleId = vId,
                 serviceType = type,
                 odoReading = odo,
                 cost = cost,
                 notes = n,
                 date = d,
-                // ADD THESE NEW FIELDS BELOW:
-                centerName = centerName,
-                location = location,
-                phone = phone,
-                quality = quality
+                serviceCenter = center, // Match these to the Data Class properties
+                location = loc,
+                contact = phone,
+                rating = star
             )
-        )
+            repository.insertService(newLog)
+        }
     }
 
     fun updateServiceEntry(
-        id: Int,
-        vehicleId: Int,
-        type: String,
-        odo: Double,
-        cost: Double,
-        n: String,    // Changed from notes to n
-        d: Long,      // Changed from date to d
-        centerName: String = "",
-        location: String = "",
-        phone: String = "",
-        quality: Int = 4
-    ) = viewModelScope.launch {
-        repository.updateService(
-            ServiceLog(
+        id: Int, vehicleId: Int, type: String, odo: Double, cost: Double,
+        n: String, d: Long, center: String, loc: String, phone: String, star: Int
+    ) {
+        viewModelScope.launch {
+            val updatedLog = ServiceLog(
                 id = id,
                 vehicleId = vehicleId,
                 serviceType = type,
                 odoReading = odo,
                 cost = cost,
-                date = d,
                 notes = n,
-                centerName = centerName,
-                location = location,
-                phone = phone,
-                quality = quality
+                date = d,
+                serviceCenter = center,
+                location = loc,
+                contact = phone,
+                rating = star
             )
-        )
+            repository.updateService(updatedLog)
+        }
     }
 
     fun deleteHistoryItem(item: HistoryItem) = viewModelScope.launch {
