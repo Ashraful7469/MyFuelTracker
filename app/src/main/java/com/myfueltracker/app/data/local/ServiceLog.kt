@@ -7,9 +7,14 @@ import androidx.room.PrimaryKey
 data class ServiceLog(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val vehicleId: Int,
-    val serviceType: String, // e.g., Oil Change, Tire Rotation
+    val serviceType: String,
     val odoReading: Double,
     val cost: Double,
-    val date: Long = System.currentTimeMillis(),
-    val notes: String? = null
+    val date: Long,
+    val notes: String,
+    // Ensure these exist:
+    val centerName: String? = null,
+    val location: String? = null,
+    val phone: String? = null,
+    val quality: Int = 4
 )
