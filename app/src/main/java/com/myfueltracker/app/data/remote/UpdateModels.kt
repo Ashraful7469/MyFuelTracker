@@ -11,6 +11,7 @@ data class GitHubRelease(
 
 // This represents the actual APK file attached to the release
 data class Asset(
+    val name: String,
     val browser_download_url: String // The direct link to download your APK
 )
 
