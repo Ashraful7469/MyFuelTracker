@@ -1,9 +1,9 @@
 package com.myfueltracker.app.utils
 
-import android.app.DownloadManager
 import android.content.Context
+import android.content.Intent
 import android.net.Uri
-import android.os.Environment
+import android.widget.Toast
 import com.myfueltracker.app.data.remote.GitHubRelease
 import com.myfueltracker.app.data.remote.GitHubService
 import retrofit2.Retrofit
@@ -24,7 +24,7 @@ class UpdateManager(private val context: Context) {
     suspend fun checkForUpdates(currentVersion: String): GitHubRelease? {
         return try {
             val latest = service.getLatestRelease()
-            // If the GitHub tag (e.g. "v1.1.0") is different from your app version, return it
+            // Compares GitHub tag (e.g., "v1.0.1") with your app's current version
             if (latest.tag_name != currentVersion) latest else null
         } catch (e: Exception) {
             e.printStackTrace()
@@ -33,18 +33,26 @@ class UpdateManager(private val context: Context) {
     }
 
     /**
-     * Uses the System DownloadManager to grab the APK file.
+     * Redirects the user to the browser to download and install the APK.
+     * This is the most reliable method for non-Play Store updates.
      */
     fun downloadAndInstall(url: String) {
-        val request = DownloadManager.Request(Uri.parse(url))
-            .setTitle("MyFuelTracker Update")
-            .setDescription("Downloading the latest version...")
-            .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
-            .setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "MyFuelTracker_Update.apk")
-            .setAllowedOverMetered(true)
-            .setAllowedOverRoaming(true)
+        if (url.isBlank()) return
 
-        val manager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
-        manager.enqueue(request)
+        try {
+            // Inform the user the process is starting
+            Toast.makeText(context, "Opening download link...", Toast.LENGTH_SHORT).show()
+
+            // Creating an intent to open the URL in a browser
+            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url)).apply {
+                // Required when starting an activity from outside an Activity context
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
+
+            context.startActivity(intent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Toast.makeText(context, "Could not open browser. Please check your link.", Toast.LENGTH_LONG).show()
+        }
     }
 }
