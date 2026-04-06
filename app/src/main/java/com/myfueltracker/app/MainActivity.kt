@@ -1,35 +1,22 @@
 package com.myfueltracker.app
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.*
 import androidx.navigation.navArgument
 import com.myfueltracker.app.ui.*
-// Compose State & Lifecycle
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.LaunchedEffect
-
-// Compose UI Components
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-
-// Your New Update System Classes
 import com.myfueltracker.app.utils.UpdateManager
 import com.myfueltracker.app.data.remote.GitHubRelease
-
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -42,35 +29,49 @@ class MainActivity : ComponentActivity() {
             val navBackStackEntry by navController.currentBackStackEntryAsState()
             val currentRoute = navBackStackEntry?.destination?.route
 
-            val context = androidx.compose.ui.platform.LocalContext.current
+            val context = LocalContext.current
+
+            // Initialize UpdateManager once
             val updateManager = remember { UpdateManager(context) }
             var updateInfo by remember { mutableStateOf<GitHubRelease?>(null) }
 
-// Check for updates on launch
+            // Check for updates on launch
             LaunchedEffect(Unit) {
-                // Replace "v1.0.0" with your actual current version string
-                val latest = updateManager.checkForUpdates("v1.0.0")
+                // Get the current version from your app's build config
+                val currentVersionTag = "v${packageManager.getPackageInfo(packageName, 0).versionName}"
+
+                val latest = updateManager.checkForUpdates(currentVersionTag)
                 if (latest != null) {
                     updateInfo = latest
                 }
             }
 
-// Show the dialog if an update is found
+            // Show the Update Dialog if a new release is found
             if (updateInfo != null) {
                 AlertDialog(
                     onDismissRequest = { updateInfo = null },
                     title = { Text("Update Available") },
-                    text = { Text("A new version (${updateInfo?.tag_name}) is ready. Would you like to download it?") },
+                    text = {
+                        Text("A new version (${updateInfo?.tag_name}) is ready. Would you like to download and install the latest features?")
+                    },
                     confirmButton = {
                         Button(onClick = {
-                            updateInfo?.assets?.firstOrNull()?.let {
-                                updateManager.downloadAndInstall(it.browser_download_url)
+                            // Find the APK in the assets list, fallback to HTML URL if not found
+                            val downloadUrl = updateInfo?.assets?.find { it.name.endsWith(".apk") }?.browser_download_url
+                                ?: updateInfo?.html_url
+
+                            downloadUrl?.let { url ->
+                                updateManager.downloadAndInstall(url)
                             }
                             updateInfo = null
-                        }) { Text("Download") }
+                        }) {
+                            Text("Download")
+                        }
                     },
                     dismissButton = {
-                        TextButton(onClick = { updateInfo = null }) { Text("Later") }
+                        TextButton(onClick = { updateInfo = null }) {
+                            Text("Later")
+                        }
                     }
                 )
             }
@@ -88,7 +89,6 @@ class MainActivity : ComponentActivity() {
 
             Scaffold(
                 bottomBar = {
-                    // Show bottom bar only if not on a 'hide' route and not in the first-run flow
                     val shouldShowBottomBar = currentRoute != null &&
                             currentRoute !in hideBottomBarRoutes &&
                             !isFirstRun
@@ -103,12 +103,10 @@ class MainActivity : ComponentActivity() {
                     startDestination = if (isFirstRun) "welcome" else Screen.Dashboard.route,
                     modifier = Modifier.padding(innerPadding)
                 ) {
-
                     composable("welcome") {
                         WelcomeScreen(
                             viewModel = viewModel,
                             onGetStarted = {
-                                // Triggered after successful Google Login
                                 viewModel.setFirstRunCompleted()
                                 navController.navigate(Screen.Dashboard.route) {
                                     popUpTo("welcome") { inclusive = true }
@@ -204,11 +202,8 @@ class MainActivity : ComponentActivity() {
                         route = Screen.AddFuel.route + "/{vehicleId}",
                         arguments = listOf(navArgument("vehicleId") { type = NavType.IntType })
                     ) { backStackEntry ->
-                        // 1. You defined the variable as 'vId' here...
                         val vIdFromNav = backStackEntry.arguments?.getInt("vehicleId") ?: 0
-
                         AddFuelScreen(
-                            // 2. So you must use 'vIdFromNav' here!
                             vehicleId = vIdFromNav,
                             viewModel = viewModel,
                             onBackClick = { navController.popBackStack() },
