@@ -41,22 +41,18 @@ fun DashboardScreen(
     val vehicles by viewModel.allVehicles.collectAsState()
     val selectedVehicleId by viewModel.selectedVehicleId.collectAsState()
     val selectedVehicle by viewModel.selectedVehicle.collectAsState()
-
     val latestFuel by viewModel.latestFuelEntry.collectAsState(initial = null)
     val latestService by viewModel.latestServiceLog.collectAsState(initial = null)
     val historyItems by viewModel.combinedHistory.collectAsState()
-
     val totalFuelingCost by viewModel.totalFuelingCost.collectAsState()
     val totalServiceCost by viewModel.totalServiceCost.collectAsState()
     val totalMileage by viewModel.totalMileage.collectAsState()
     val currency by viewModel.currency.collectAsState()
     val distanceUnit by viewModel.distanceUnit.collectAsState()
     val fuelUnit by viewModel.fuelUnit.collectAsState()
-
     val lastEfficiency = remember(historyItems, selectedVehicleId) {
         val fuelLogs = historyItems.filterIsInstance<HistoryItem.Fuel>()
             .filter { it.entry.vehicleId == selectedVehicleId }
-
         if (fuelLogs.size >= 2) {
             val current = fuelLogs[0].entry
             val previous = fuelLogs[1].entry
@@ -116,7 +112,7 @@ fun DashboardScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // --- VEHICLE SELECTOR ---
+// --- VEHICLE SELECTOR ---
             ExposedDropdownMenuBox(
                 expanded = expanded,
                 onExpandedChange = { expanded = !expanded }
@@ -165,7 +161,6 @@ fun DashboardScreen(
                     )
                 }
             }
-
             if (vehicles.isEmpty()) {
                 Box(modifier = Modifier.fillMaxWidth().padding(top = 60.dp), contentAlignment = Alignment.Center) {
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -177,30 +172,11 @@ fun DashboardScreen(
                 }
             } else {
                 Text("Fuel Summary", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold)
-
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    DashboardCard(
-                        modifier = Modifier.weight(1f),
-                        label = "Lifetime Spend",
-                        value = "$currency${String.format("%.0f", grandTotal)}",
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                    DashboardCard(
-                        modifier = Modifier.weight(1f),
-                        label = "Cost / $distanceUnit",
-                        value = "$currency${String.format("%.2f", costPerUnit)}",
-                        containerColor = MaterialTheme.colorScheme.secondaryContainer,
-                        labelColor = MaterialTheme.colorScheme.onSecondaryContainer
-                    )
-                }
-
-                // Symmetrical Cards with Shared Font Sizes
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
+                    // --- Lifetime Spend Card ---
                     Card(
                         modifier = Modifier.weight(1f).height(80.dp),
                         shape = RoundedCornerShape(12.dp)
@@ -208,7 +184,70 @@ fun DashboardScreen(
                         Column(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .background(Brush.verticalGradient(listOf(Color(0xFFFFE599), Color(0xFFFFF2CC))))
+                                // Soft Purple Gradient
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFE1BEE7), Color(0xFFF3E5F5))))
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Lifetime Spend",
+                                fontSize = labelSize,
+                                color = Color(0xFF7B1FA2).copy(alpha = 0.7f) // Deep purple label
+                            )
+                            Text(
+                                text = "$currency${String.format("%.0f", grandTotal)}",
+                                fontSize = valueSize,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
+
+                    // --- Cost / Distance Unit Card ---
+                    Card(
+                        modifier = Modifier.weight(1f).height(80.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                // Soft Indigo/Lavender Gradient
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFEDE7F6), Color(0xFFD1C4E9))))
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Cost / $distanceUnit",
+                                fontSize = labelSize,
+                                color = Color(0xFF512DA8).copy(alpha = 0.7f) // Deep indigo label
+                            )
+                            Text(
+                                text = "$currency${String.format("%.2f", costPerUnit)}",
+                                fontSize = valueSize,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                        }
+                    }
+                }
+
+
+
+// Symmetrical Cards with Shared Font Sizes
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // --- Total Fueling Card ---
+                    Card(
+                        modifier = Modifier.weight(1f).height(80.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFFFE599), Color(0xFFFFF2CC))))
                                 .padding(16.dp),
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -217,41 +256,89 @@ fun DashboardScreen(
                         }
                     }
 
-                    DashboardCard(
+                    // --- Total Service Card (Now matching Fueling style) ---
+                    Card(
                         modifier = Modifier.weight(1f).height(80.dp),
-                        label = "Total Service",
-                        value = "$currency${String.format("%.2f", totalServiceCost ?: 0.0)}",
-                        containerColor = Color(0xFFE8F5E9),
-                        labelColor = Color(0xFF2E7D32),
-                        labelFontSize = labelSize,
-                        valueFontSize = valueSize
-                    )
-                }
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFFEE8DD)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(20.dp)) {
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween) {
-                            Column {
-                                Text("Total Distance Traveled", style = MaterialTheme.typography.labelLarge, color = Color.Black.copy(0.6f))
-                                Text("$safeMileage $distanceUnit", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.Black)
-                            }
-                            Icon(Icons.Default.Timeline, null, modifier = Modifier.size(32.dp), tint = Color(0xFFE57373).copy(0.6f))
-                        }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                            MetricDotItem(Color(0xFFFF9800), "${String.format("%.1f", totalFuelVolume)} $fuelUnit")
-                            MetricDotItem(Color(0xFF4CAF50), "$currency${String.format("%.0f", grandTotal)}")
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                // Applied a soft green gradient to match the yellow one
+                                .background(Brush.horizontalGradient(listOf(Color(0xFFE8F5E9), Color(0xFFC8E6C9))))
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            // Label color changed to dark green to match your previous design
+                            Text("Total Service", fontSize = labelSize, color = Color(0xFF2E7D32).copy(0.7f))
+                            Text("$currency${String.format("%.2f", totalServiceCost ?: 0.0)}", fontSize = valueSize, fontWeight = FontWeight.Bold, color = Color.Black)
                         }
                     }
                 }
 
-                Text("Recent Activity", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = Color.Blue)
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    // Set container to Transparent so the gradient background shows through
+                    colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            // Using a soft peach-to-orange gradient to replace Color(0xFFFEE8DD)
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(
+                                        Color(0xFFFFF3E0), // Very light peach top
+                                        Color(0xFFFEE8DD)  // Your original color at the bottom
+                                    )
+                                )
+                            )
+                    ) {
+                        Column(modifier = Modifier.padding(20.dp)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text(
+                                        "Total Distance Traveled",
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = Color.Black.copy(0.6f)
+                                    )
+                                    Text(
+                                        "$safeMileage $distanceUnit",
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.Black
+                                    )
+                                }
+                                // Removed the alpha from tint to make the icon sharper against the gradient
+                                Icon(
+                                    Icons.Default.Timeline,
+                                    null,
+                                    modifier = Modifier.size(32.dp),
+                                    tint = Color(0xFFE57373)
+                                )
+                            }
 
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                            ) {
+                                MetricDotItem(Color(0xFFFF9800), "${String.format("%.1f", totalFuelVolume)} $fuelUnit")
+                                MetricDotItem(Color(0xFF4CAF50), "$currency${String.format("%.0f", grandTotal)}")
+                            }
+                        }
+                    }
+                }
+
+                Text("Recent Activity", style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.Bold, color = (Color(0xff3d85c6)))
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     QuickViewCard(
                         modifier = Modifier.weight(1f),
                         title = "Last Fuel",
@@ -259,7 +346,8 @@ fun DashboardScreen(
                         date = latestFuel?.dateTimestamp,
                         efficiency = lastEfficiency?.let { "$it $distanceUnit/$fuelUnit" },
                         icon = Icons.Default.LocalGasStation,
-                        color = Color(0xFFFFEBEE),
+                        // Soft Red/Pink Gradient
+                        gradientColors = listOf(Color(0xFFffc9d1), Color(0xFFFFF1F0)),
                         iconColor = Color.Red
                     )
                     QuickViewCard(
@@ -268,7 +356,8 @@ fun DashboardScreen(
                         value = latestService?.serviceType ?: "No Records",
                         date = latestService?.date,
                         icon = Icons.Default.Handyman,
-                        color = Color(0xFFE8F5E9),
+                        // Soft Green Gradient
+                        gradientColors = listOf(Color(0xFFF1F8E9), Color(0xFFb6d7a8)),
                         iconColor = Color(0xFF2E7D32)
                     )
                 }
@@ -294,6 +383,7 @@ fun DashboardCard(
     labelColor: Color = Color.Unspecified,
     labelFontSize: TextUnit = 14.sp,
     valueFontSize: TextUnit = 18.sp
+
 ) {
     Card(
         modifier = modifier,
@@ -320,24 +410,55 @@ fun DashboardCard(
     }
 }
 
+
+
 // (QuickViewCard, DashboardPieChart, MetricDotItem, ChartLegendItem remain as you provided)
+
 @Composable
-fun QuickViewCard(modifier: Modifier = Modifier, title: String, value: String, date: Long?, efficiency: String? = null, icon: ImageVector, color: Color, iconColor: Color) {
+fun QuickViewCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    value: String,
+    date: Long?,
+    efficiency: String? = null,
+    icon: ImageVector,
+    gradientColors: List<Color>, // Changed from color: Color
+    iconColor: Color
+) {
     val dateStr = date?.let { SimpleDateFormat("dd MMM", Locale.getDefault()).format(Date(it)) } ?: "---"
-    Card(modifier = modifier, colors = CardDefaults.cardColors(containerColor = color), shape = RoundedCornerShape(16.dp)) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Icon(icon, null, modifier = Modifier.size(14.dp), tint = iconColor)
-                Spacer(modifier = Modifier.width(4.dp))
-                Text(title, style = MaterialTheme.typography.labelSmall, color = iconColor)
-            }
-            Spacer(modifier = Modifier.height(4.dp))
+
+    Card(
+        modifier = modifier,
+        // Set to Transparent so the gradient Box underneath is visible
+        colors = CardDefaults.cardColors(containerColor = Color.Transparent),
+        shape = RoundedCornerShape(16.dp)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Brush.horizontalGradient(gradientColors))
+                .padding(12.dp)
+        ) {
             Column {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1)
-                    if (efficiency != null) Text(text = "• $efficiency", style = MaterialTheme.typography.labelSmall, color = iconColor.copy(alpha = 0.7f), fontWeight = FontWeight.Medium, maxLines = 1)
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(icon, null, modifier = Modifier.size(14.dp), tint = iconColor)
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(title, style = MaterialTheme.typography.labelSmall, color = iconColor)
                 }
-                Text(dateStr, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                Spacer(modifier = Modifier.height(4.dp))
+                Column {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                    ) {
+                        Text(text = value, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold, maxLines = 1)
+                        if (efficiency != null) {
+                            Text(text = "• $efficiency", style = MaterialTheme.typography.labelSmall, color = iconColor.copy(alpha = 0.7f), fontWeight = FontWeight.Medium, maxLines = 1)
+                        }
+                    }
+                    Text(dateStr, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                }
             }
         }
     }
