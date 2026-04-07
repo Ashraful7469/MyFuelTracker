@@ -12,7 +12,7 @@ Visual Data: High-fidelity pie charts to visualize your spending breakdown betwe
 Material 3 & Jetpack Compose: Built with the latest Android standards for a smooth, native experience.
 
 📲 Download & Install
-You can find the latest stable build from https://github.com/Ashraful7469/MyFuelTracker/tree/apk-download.
+You can find the latest stable build from https://github.com/ashrafularefin/MyFuelTracker/tree/apk-download.
 - Download the MyFuelTracker-v1.0.1-com.myfueltracker.app.apk.
 - Install it on your Android device.
 
